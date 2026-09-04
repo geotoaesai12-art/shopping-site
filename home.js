@@ -1,4 +1,4 @@
-```javascript
+
 // home.js — hero slider + featured products for the landing page
 
 mountLayout('home');
@@ -237,4 +237,4 @@ async function loadFeatured() {
 }
 
 loadFeatured();
-```
+
