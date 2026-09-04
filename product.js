@@ -1,4 +1,4 @@
-```javascript
+
 // product.js — single product detail page
 
 const API_BASE = 'https://shopping-site-production.up.railway.app';
@@ -202,4 +202,4 @@ function renderProduct() {
 }
 
 loadProduct();
-```
+
