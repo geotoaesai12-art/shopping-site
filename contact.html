@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact — SAHN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="headerMount"></div>
+
+<main class="container contact-wrap">
+  <div class="contact-info">
+    <h1>We'd love to hear from you 💬</h1>
+    <p>Questions about an order, a product, or just want to say hi? Send a message and our team will reply here — you can check for a reply anytime using your email.</p>
+
+    <div class="contact-badges">
+      <div class="contact-badge">⚡ Fast replies</div>
+      <div class="contact-badge">🇵🇰 Local support</div>
+      <div class="contact-badge">💚 Friendly team</div>
+    </div>
+
+    <div class="info-item">
+      <div class="info-icon">📍</div>
+      <div><strong>Location</strong><span>Serving customers across Pakistan</span></div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">✉️</div>
+      <div><strong>Email</strong><span>hello@sahn.pk</span></div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">📞</div>
+      <div><strong>Phone / WhatsApp</strong><span>+92 300 0000000</span></div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">🕒</div>
+      <div><strong>Hours</strong><span>Mon–Sat, 10am–7pm PKT</span></div>
+    </div>
+
+    <div class="faq-section">
+      <h3 style="font-size:15px; margin-bottom:6px;">Quick answers</h3>
+      <div class="faq-item"><strong>How long does delivery take?</strong><span>Most orders arrive in 3–5 days, shown on each product page.</span></div>
+      <div class="faq-item"><strong>Can I pay on delivery?</strong><span>Yes — Cash on Delivery, EasyPaisa, JazzCash, and bank transfer are all supported.</span></div>
+      <div class="faq-item"><strong>How do I track my order?</strong><span>Use the "Track Order" link in the menu with your order number.</span></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="form-card">
+      <div id="formMsg"></div>
+      <form id="contactForm">
+        <div class="field"><label for="name">Full name</label><input type="text" id="name" required /></div>
+        <div class="field"><label for="email">Email address</label><input type="email" id="email" required /></div>
+        <div class="field"><label for="message">Message</label><textarea id="message" required placeholder="How can we help?"></textarea></div>
+        <button type="submit" class="btn-full">Send message</button>
+      </form>
+      <a href="#" id="checkReplyLink" class="check-reply-link">Already messaged us? Check for a reply →</a>
+    </div>
+
+    <div id="repliesBox" class="form-card hidden" style="margin-top:16px;">
+      <h3 style="margin-bottom:12px; font-size:15px;">Your messages</h3>
+      <div id="repliesList"></div>
+    </div>
+  </div>
+</main>
+
+<div id="footerMount"></div>
+<div id="cartDrawerMount"></div>
+
+<script src="partials.js"></script>
+<script src="cart.js"></script>
+<script src="contact.js"></script>
+</body>
+</html>

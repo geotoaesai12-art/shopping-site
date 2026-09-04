@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — SAHN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+<style>
+  .admin-wrap { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+  .order-card { background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; }
+  .order-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .order-top strong { font-size: 15px; }
+  .order-top span { font-size: 13px; color: var(--muted); }
+  .order-meta { font-size: 13.5px; color: var(--muted); margin-bottom: 10px; line-height: 1.7; }
+  .order-items { font-size: 13.5px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .order-items div { display: flex; justify-content: space-between; padding: 2px 0; }
+  .admin-tabs { display: flex; gap: 10px; margin-bottom: 24px; }
+  .admin-tabs button { padding: 8px 18px; border-radius: 16px; border: 1px solid var(--line); background: white; cursor: pointer; font-size: 13.5px; }
+  .admin-tabs button.active { background: var(--ink); color: white; border-color: var(--ink); }
+  .msg-card { background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 12px; }
+  .msg-card .msg-top { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .msg-card .msg-email { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
+  .msg-card .msg-reply { background: var(--surface); border-radius: var(--radius); padding: 10px 12px; margin-top: 10px; font-size: 13.5px; }
+  .msg-card .reply-form { margin-top: 10px; display: flex; gap: 8px; }
+  .msg-card .reply-form input { flex: 1; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); font-size: 13.5px; }
+  .msg-card .reply-form button { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: var(--radius); font-size: 13px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="auth-page" id="lockScreen">
+  <div class="auth-box">
+    <h1>Admin access</h1>
+    <p class="intro">Enter the admin password to view orders and messages.</p>
+    <div id="lockMsg"></div>
+    <form id="lockForm">
+      <div class="field"><label for="adminPassword">Admin password</label><input type="password" id="adminPassword" required /></div>
+      <button type="submit" class="btn-full">Unlock</button>
+    </form>
+  </div>
+</div>
+
+<div id="adminPanel" class="admin-wrap hidden">
+  <h1 style="margin-bottom: 20px;">Orders & Messages</h1>
+  <div class="admin-tabs">
+    <button id="tabOrders" class="active">Orders</button>
+    <button id="tabMessages">Contact Messages</button>
+  </div>
+  <div id="ordersList"></div>
+  <div id="messagesList" class="hidden"></div>
+</div>
+
+<script>
+const lockScreen = document.getElementById('lockScreen');
+const adminPanel = document.getElementById('adminPanel');
+function getAdminKey() { return sessionStorage.getItem('adminKey'); }
+
+async function tryLoad() {
+  const key = getAdminKey();
+  if (!key) return;
+  const res = await fetch('/api/admin/orders', { headers: { 'x-admin-key': key } });
+  if (res.ok) {
+    lockScreen.classList.add('hidden');
+    adminPanel.classList.remove('hidden');
+    renderOrders(await res.json());
+  }
+}
+
+document.getElementById('lockForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = document.getElementById('adminPassword').value;
+  const res = await fetch('/api/admin/orders', { headers: { 'x-admin-key': password } });
+  if (!res.ok) {
+    document.getElementById('lockMsg').innerHTML = `<div class="form-msg error">Wrong password.</div>`;
+    return;
+  }
+  sessionStorage.setItem('adminKey', password);
+  lockScreen.classList.add('hidden');
+  adminPanel.classList.remove('hidden');
+  renderOrders(await res.json());
+});
+
+const STAGE_LABELS = { received: 'Order received', warehouse: 'At warehouse', packed: 'Packed', out_for_delivery: 'Out for delivery', delivered: 'Delivered' };
+const STAGE_ORDER = ['received', 'warehouse', 'packed', 'out_for_delivery', 'delivered'];
+
+function renderOrders(orders) {
+  const container = document.getElementById('ordersList');
+  if (orders.length === 0) { container.innerHTML = `<p class="loading">No orders yet.</p>`; return; }
+  container.innerHTML = orders.map(o => {
+    const isFinal = o.status === 'delivered';
+    return `
+    <div class="order-card">
+      <div class="order-top"><strong>Order #${o.id}</strong><span>${new Date(o.created_at).toLocaleString()}</span></div>
+      <div class="order-meta">
+        <strong>${o.customer_name}</strong> · ${o.city || ''}<br/>
+        ${o.email}<br/>
+        ${o.address}<br/>
+        Payment: ${(o.payment_method || 'cod').toUpperCase()} ${o.coupon_code ? `· Coupon: ${o.coupon_code}` : ''}
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin: 10px 0;">
+        <span style="font-size:13px; font-weight:600; color:var(--accent-dark);">Status: ${STAGE_LABELS[o.status] || o.status}</span>
+        ${!isFinal ? `<button onclick="advanceOrder(${o.id})" style="background:var(--ink); color:white; border:none; padding:6px 14px; border-radius:6px; font-size:12.5px; cursor:pointer;">Advance to next stage →</button>` : ''}
+      </div>
+      <div class="order-items">
+        ${o.items.map(i => `<div><span>${i.quantity} × ${i.name}</span><span>Rs. ${(i.price_at_purchase * i.quantity).toLocaleString()}</span></div>`).join('')}
+        <div style="font-weight:700; margin-top:6px;"><span>Total</span><span>Rs. ${o.total.toLocaleString()}</span></div>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+async function advanceOrder(id) {
+  const res = await fetch(`/api/admin/orders/${id}/advance`, {
+    method: 'POST',
+    headers: { 'x-admin-key': getAdminKey() }
+  });
+  if (res.ok) {
+    const refreshed = await fetch('/api/admin/orders', { headers: { 'x-admin-key': getAdminKey() } });
+    renderOrders(await refreshed.json());
+  }
+}
+
+async function loadMessages() {
+  const res = await fetch('/api/admin/messages', { headers: { 'x-admin-key': getAdminKey() } });
+  if (res.ok) renderMessages(await res.json());
+}
+
+function renderMessages(messages) {
+  const container = document.getElementById('messagesList');
+  if (messages.length === 0) { container.innerHTML = `<p class="loading">No messages yet.</p>`; return; }
+  container.innerHTML = messages.map(m => `
+    <div class="msg-card">
+      <div class="msg-top">${m.name} — ${new Date(m.created_at).toLocaleString()}</div>
+      <div class="msg-email">${m.email}</div>
+      <div>${m.message}</div>
+      ${m.reply
+        ? `<div class="msg-reply"><strong>Your reply:</strong> ${m.reply}</div>`
+        : `<div class="reply-form">
+             <input type="text" placeholder="Write a reply..." id="replyInput-${m.id}" />
+             <button onclick="sendReply(${m.id})">Send</button>
+           </div>`}
+    </div>
+  `).join('');
+}
+
+async function sendReply(id) {
+  const input = document.getElementById(`replyInput-${id}`);
+  const reply = input.value.trim();
+  if (!reply) return;
+
+  const res = await fetch(`/api/admin/messages/${id}/reply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
+    body: JSON.stringify({ reply })
+  });
+  if (res.ok) loadMessages();
+}
+
+document.getElementById('tabOrders').addEventListener('click', () => {
+  document.getElementById('tabOrders').classList.add('active');
+  document.getElementById('tabMessages').classList.remove('active');
+  document.getElementById('ordersList').classList.remove('hidden');
+  document.getElementById('messagesList').classList.add('hidden');
+});
+
+document.getElementById('tabMessages').addEventListener('click', async () => {
+  document.getElementById('tabMessages').classList.add('active');
+  document.getElementById('tabOrders').classList.remove('active');
+  document.getElementById('messagesList').classList.remove('hidden');
+  document.getElementById('ordersList').classList.add('hidden');
+  loadMessages();
+});
+
+tryLoad();
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Create account — SAHN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-box">
+    <a href="index.html" class="logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 12V9a4 4 0 0 1 8 0v3" stroke="#FF7A1A" stroke-width="2" stroke-linecap="round"/>
+        <rect x="5" y="12" width="22" height="16" rx="3" fill="#FF7A1A"/>
+        <path d="M12 16v2a2 2 0 0 0 4 0v-2" stroke="#131A22" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-word" style="color:#131A22;">SAHN</span>
+    </a>
+    <h1>Create your account</h1>
+    <p class="intro">Sign up to check out faster next time.</p>
+
+    <div id="formMsg"></div>
+    <form id="signupForm">
+      <div class="field"><label for="name">Full name</label><input type="text" id="name" required /></div>
+      <div class="field"><label for="email">Email address</label><input type="email" id="email" required /></div>
+      <div class="field"><label for="password">Password</label><input type="password" id="password" required minlength="6" /></div>
+      <button type="submit" class="btn-full">Create account</button>
+    </form>
+    <div class="form-switch">Already have an account? <a href="login.html">Sign in</a></div>
+  </div>
+</div>
+
+<div id="cartDrawerMount"></div>
+<script src="partials.js"></script>
+<script src="cart.js"></script>
+<script src="auth.js"></script>
+</body>
+</html>

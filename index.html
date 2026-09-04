@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SAHN — Online Store</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="headerMount"></div>
+
+<section class="hero-slider" id="heroSlider">
+
+  <div class="hero-slide active" style="background-image: url('https://picsum.photos/seed/sahn-hero1/1600/700');">
+    <div class="hero-slide-inner">
+      <div class="hero-text">
+        <span class="eyebrow">11.11 MEGA SALE</span>
+        <h1>Everything for the everyday, up to 50% off</h1>
+        <p>From gadgets to home goods — SAHN brings it all together, priced fairly and shipped fast across Pakistan.</p>
+        <a href="shop.html" class="hero-cta">Shop the sale</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-slide" style="background-image: url('https://picsum.photos/seed/sahn-hero2/1600/700');">
+    <div class="hero-slide-inner">
+      <div class="hero-text">
+        <span class="eyebrow">Electronics</span>
+        <h1>Tech that earns its shelf space</h1>
+        <p>Earbuds, speakers, and gadgets tested for everyday reliability — not just launch-day hype.</p>
+        <a href="shop.html?category=Electronics" class="hero-cta">Browse electronics</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-slide" style="background-image: url('https://picsum.photos/seed/sahn-hero3/1600/700');">
+    <div class="hero-slide-inner">
+      <div class="hero-text">
+        <span class="eyebrow">Home & living</span>
+        <h1>A house runs on small good things</h1>
+        <p>Lamps, cookware, and everyday essentials chosen for how often you'll actually use them.</p>
+        <a href="shop.html?category=Home" class="hero-cta">Shop home goods</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-slide" style="background-image: url('https://picsum.photos/seed/sahn-hero4/1600/700');">
+    <div class="hero-slide-inner">
+      <div class="hero-text">
+        <span class="eyebrow">Fashion</span>
+        <h1>Wardrobe basics, done properly</h1>
+        <p>Shirts, bags, and footwear built around fit and fabric first — trends come second.</p>
+        <a href="shop.html?category=Fashion" class="hero-cta">Browse fashion</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-slide" style="background-image: url('https://picsum.photos/seed/sahn-hero5/1600/700');">
+    <div class="hero-slide-inner">
+      <div class="hero-text">
+        <span class="eyebrow">Free delivery</span>
+        <h1>Fast shipping, honest pricing</h1>
+        <p>No inflated "sale" prices. Just fair costs and delivery that actually shows up on time.</p>
+        <a href="shop.html" class="hero-cta">Start shopping</a>
+      </div>
+    </div>
+  </div>
+
+  <button class="hero-arrow prev" id="heroPrev">‹</button>
+  <button class="hero-arrow next" id="heroNext">›</button>
+  <div class="hero-dots" id="heroDots"></div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>Shop by category</h2></div>
+    <div class="category-grid">
+      <a href="shop.html?category=Electronics" class="category-card"><div class="cat-icon">🎧</div><div class="cat-name">Electronics</div></a>
+      <a href="shop.html?category=Fashion" class="category-card"><div class="cat-icon">👕</div><div class="cat-name">Fashion</div></a>
+      <a href="shop.html?category=Home" class="category-card"><div class="cat-icon">🏠</div><div class="cat-name">Home</div></a>
+      <a href="shop.html?category=Books" class="category-card"><div class="cat-icon">📚</div><div class="cat-name">Books</div></a>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="container">
+    <div class="section-head">
+      <h2>Featured deals</h2>
+      <a href="shop.html">View all →</a>
+    </div>
+    <div id="featuredGrid" class="product-grid">
+      <p class="loading">Loading products...</p>
+    </div>
+  </div>
+</section>
+
+<section class="value-strip">
+  <div class="container">
+    <div><strong>Fair pricing</strong><span>No inflated discounts, just honest costs</span></div>
+    <div><strong>Fast delivery</strong><span>Most orders ship within 24 hours</span></div>
+    <div><strong>Easy returns</strong><span>7-day no-questions returns</span></div>
+  </div>
+</section>
+
+<div id="footerMount"></div>
+<div id="cartDrawerMount"></div>
+
+<script src="partials.js"></script>
+<script src="cart.js"></script>
+<script src="home.js"></script>
+</body>
+</html>
