@@ -16,7 +16,8 @@ Professional multi-page shopping website:
 - **Admin** (`/admin.html`) — view orders, click "Advance to next stage" to move an order through tracking, reply to contact messages
 
 ## Admin password
-Default: `depot123` — change it in `backend/server.js` (search for `ADMIN_KEY`) before going live.
+Default: `
+` — change it in `backend/server.js` (search for `ADMIN_KEY`) before going live.
 
 ## Coupon codes (demo)
 `SALE11` (11% off), `WELCOME10` (10% off), plus a few product-specific codes shown on product pages. Edit the `COUPON_CODES` object in `backend/server.js` to add your own.
