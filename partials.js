@@ -1,14 +1,13 @@
 
-// partials.js — shared header + footer, injected on every page.
+// partials.js — shared header + footer
 
-const API_BASE = 'https://shopping-site-production.up.railway.app';
+const SHARED_API_BASE = 'https://shopping-site-production.up.railway.app';
 
 const LOGO_SVG = `<svg class="logo-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M8 12V9a4 4 0 0 1 8 0v3" stroke="#FF7A1A" stroke-width="2" stroke-linecap="round"/>
   <rect x="5" y="12" width="22" height="16" rx="3" fill="#FF7A1A"/>
   <path d="M12 16v2a2 2 0 0 0 4 0v-2" stroke="#131A22" stroke-width="1.6" stroke-linecap="round"/>
 </svg>`;
-
 
 function renderHeader(activePage) {
   const token = localStorage.getItem('token');
@@ -63,47 +62,24 @@ function renderHeader(activePage) {
     <nav class="nav-strip">
       <div class="container">
 
-        <a
-          href="index.html"
-          class="${activePage === 'home' ? 'active' : ''}"
-        >
+        <a href="index.html" class="${activePage === 'home' ? 'active' : ''}">
           Home
         </a>
 
-        <a
-          href="shop.html"
-          class="${activePage === 'shop' ? 'active' : ''}"
-        >
+        <a href="shop.html" class="${activePage === 'shop' ? 'active' : ''}">
           All Products
         </a>
 
-        <a href="shop.html?category=Electronics">
-          Electronics
-        </a>
+        <a href="shop.html?category=Electronics">Electronics</a>
+        <a href="shop.html?category=Fashion">Fashion</a>
+        <a href="shop.html?category=Home">Home</a>
+        <a href="shop.html?category=Books">Books</a>
 
-        <a href="shop.html?category=Fashion">
-          Fashion
-        </a>
-
-        <a href="shop.html?category=Home">
-          Home
-        </a>
-
-        <a href="shop.html?category=Books">
-          Books
-        </a>
-
-        <a
-          href="contact.html"
-          class="${activePage === 'contact' ? 'active' : ''}"
-        >
+        <a href="contact.html" class="${activePage === 'contact' ? 'active' : ''}">
           Contact
         </a>
 
-        <a
-          href="track.html"
-          class="${activePage === 'track' ? 'active' : ''}"
-        >
+        <a href="track.html" class="${activePage === 'track' ? 'active' : ''}">
           Track Order
         </a>
 
@@ -111,7 +87,6 @@ function renderHeader(activePage) {
     </nav>
   </header>`;
 }
-
 
 function renderFooter() {
   return `
@@ -138,34 +113,19 @@ function renderFooter() {
 
         <div class="footer-social">
 
-          <a
-            href="https://wa.me/923000000000"
-            target="_blank"
-            rel="noopener"
-            aria-label="WhatsApp"
-          >
+          <a href="https://wa.me/923000000000" target="_blank" rel="noopener" aria-label="WhatsApp">
             <svg viewBox="0 0 24 24" fill="#C7CCD1">
               <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.7.8-.8 1-.2.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5.1-.1.2-.3.4-.4.1-.1.2-.3.2-.4.1-.2 0-.3 0-.4 0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.2 1 2.4.1.2 1.6 2.5 4 3.5.6.2 1 .4 1.3.5.6.2 1.1.2 1.5.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.2-.4-.3z"/>
             </svg>
           </a>
 
-          <a
-            href="https://facebook.com/sahnstore"
-            target="_blank"
-            rel="noopener"
-            aria-label="Facebook"
-          >
+          <a href="https://facebook.com/sahnstore" target="_blank" rel="noopener" aria-label="Facebook">
             <svg viewBox="0 0 24 24" fill="none" stroke="#C7CCD1" stroke-width="2">
               <path d="M15 8h-2a2 2 0 0 0-2 2v10M9 13h4"/>
             </svg>
           </a>
 
-          <a
-            href="https://x.com/sahnstore"
-            target="_blank"
-            rel="noopener"
-            aria-label="X (Twitter)"
-          >
+          <a href="https://x.com/sahnstore" target="_blank" rel="noopener" aria-label="X">
             <svg viewBox="0 0 24 24" fill="#C7CCD1">
               <path d="M18.9 3H21l-6.7 7.6L22.2 21h-6.4l-5-6.5L4.9 21H2.8l7.2-8.2L1.8 3h6.5l4.5 6 6.1-6zm-1.1 16.1h1.2L7.3 4.8H6l11.8 14.3z"/>
             </svg>
@@ -173,7 +133,6 @@ function renderFooter() {
 
         </div>
       </div>
-
 
       <div class="footer-col">
         <h4>Shop</h4>
@@ -183,14 +142,12 @@ function renderFooter() {
         <a href="shop.html?category=Home">Home</a>
       </div>
 
-
       <div class="footer-col">
         <h4>Support</h4>
         <a href="contact.html">Contact us</a>
         <a href="#">Shipping info</a>
         <a href="#">Returns & refunds</a>
       </div>
-
 
       <div class="footer-col">
         <h4>Get in touch</h4>
@@ -208,27 +165,18 @@ function renderFooter() {
   </footer>`;
 }
 
-
 function mountLayout(activePage) {
 
   const headerMount = document.getElementById('headerMount');
   const footerMount = document.getElementById('footerMount');
 
-  // Prevent one missing element from crashing the entire page
   if (headerMount) {
     headerMount.innerHTML = renderHeader(activePage);
-  } else {
-    console.warn('headerMount element not found.');
   }
 
   if (footerMount) {
     footerMount.innerHTML = renderFooter();
-  } else {
-    console.warn('footerMount element not found.');
   }
-
-
-  // ---------- Logout ----------
 
   const logoutLink = document.getElementById('logoutLink');
 
@@ -243,16 +191,26 @@ function mountLayout(activePage) {
       try {
 
         if (token) {
-          await fetch(`${API_BASE}/api/auth/logout`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`
+
+          await fetch(
+            `${SHARED_API_BASE}/api/auth/logout`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
             }
-          });
+          );
+
         }
 
       } catch (error) {
-        console.warn('Logout request failed:', error);
+
+        console.warn(
+          'Logout request failed:',
+          error
+        );
+
       }
 
       localStorage.removeItem('token');
@@ -261,55 +219,70 @@ function mountLayout(activePage) {
       window.location.href = 'index.html';
 
     });
+
   }
 
 
-  // ---------- Search ----------
-
-  const searchForm = document.getElementById('headerSearchForm');
+  const searchForm =
+    document.getElementById('headerSearchForm');
 
   if (searchForm) {
 
-    searchForm.addEventListener('submit', (e) => {
+    searchForm.addEventListener(
+      'submit',
+      (e) => {
 
-      e.preventDefault();
+        e.preventDefault();
 
-      const input = document.getElementById('headerSearchInput');
+        const input =
+          document.getElementById(
+            'headerSearchInput'
+          );
 
-      const q = input
-        ? input.value.trim()
-        : '';
+        const q =
+          input
+            ? input.value.trim()
+            : '';
 
-      if (
-        window.location.pathname.includes('shop.html') &&
-        typeof applyFilters === 'function'
-      ) {
+        if (
+          window.location.pathname.includes(
+            'shop.html'
+          ) &&
+          typeof applyFilters === 'function'
+        ) {
 
-        applyFilters();
+          applyFilters();
 
-      } else {
+        } else {
 
-        window.location.href = q
-          ? `shop.html?search=${encodeURIComponent(q)}`
-          : 'shop.html';
+          window.location.href =
+            q
+              ? `shop.html?search=${encodeURIComponent(q)}`
+              : 'shop.html';
+
+        }
 
       }
+    );
 
-    });
   }
 
-
-  // ---------- Cart count ----------
 
   try {
+
     renderCartCount();
+
   } catch (error) {
-    console.warn('Cart count could not be rendered:', error);
+
+    console.warn(
+      'Cart count error:',
+      error
+    );
+
   }
+
 }
 
-
-// ---------- Cart helpers (shared across all pages) ----------
 
 function getCart() {
 
@@ -321,12 +294,12 @@ function getCart() {
 
   } catch (error) {
 
-    console.warn('Cart data was invalid. Resetting cart.');
-
     localStorage.removeItem('cart');
 
     return [];
+
   }
+
 }
 
 
@@ -338,39 +311,48 @@ function saveCart(cart) {
   );
 
   renderCartCount();
+
 }
 
 
 function renderCartCount() {
 
-  const el = document.getElementById('cartCount');
+  const el =
+    document.getElementById('cartCount');
 
   if (!el) return;
 
   const cart = getCart();
 
-  const count = cart.reduce(
-    (sum, item) => sum + Number(item.quantity || 0),
-    0
-  );
+  const count =
+    cart.reduce(
+      (sum, item) =>
+        sum + Number(item.quantity || 0),
+      0
+    );
 
   el.textContent = count;
+
 }
 
 
 function starString(rating) {
 
-  const full = Math.max(
-    0,
-    Math.min(
-      5,
-      Math.round(Number(rating) || 0)
-    )
-  );
+  const full =
+    Math.max(
+      0,
+      Math.min(
+        5,
+        Math.round(
+          Number(rating) || 0
+        )
+      )
+    );
 
   return (
     '★'.repeat(full) +
     '☆'.repeat(5 - full)
   );
+
 }
 
