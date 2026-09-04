@@ -24,13 +24,23 @@ mountCartDrawer();
     slides[current].classList.add('active');
     dots[current].classList.add('active');
   }
+
   function next() { goTo(current + 1); }
   function prev() { goTo(current - 1); }
   function startAutoplay() { timer = setInterval(next, 4500); }
   function stopAutoplay() { clearInterval(timer); }
 
-  document.getElementById('heroNext').addEventListener('click', () => { next(); stopAutoplay(); startAutoplay(); });
-  document.getElementById('heroPrev').addEventListener('click', () => { prev(); stopAutoplay(); startAutoplay(); });
+  document.getElementById('heroNext').addEventListener('click', () => {
+    next();
+    stopAutoplay();
+    startAutoplay();
+  });
+
+  document.getElementById('heroPrev').addEventListener('click', () => {
+    prev();
+    stopAutoplay();
+    startAutoplay();
+  });
 
   const slider = document.getElementById('heroSlider');
   slider.addEventListener('mouseenter', stopAutoplay);
@@ -40,6 +50,7 @@ mountCartDrawer();
 
 function productCard(p) {
   const hasDiscount = p.discount_percent > 0;
+
   return `
     <a href="product.html?id=${p.id}" class="product-card" style="display:block;">
       ${hasDiscount ? `<div class="discount-badge">-${p.discount_percent}%</div>` : ''}
@@ -47,7 +58,9 @@ function productCard(p) {
       <div class="product-info">
         <div class="product-category">${p.category}</div>
         <div class="product-name">${p.name}</div>
-        <div class="product-rating"><span class="stars">${starString(p.rating)}</span> (${p.rating_count})</div>
+        <div class="product-rating">
+          <span class="stars">${starString(p.rating)}</span> (${p.rating_count})
+        </div>
         <div class="price-row">
           <span class="product-price">Rs. ${p.price.toLocaleString()}</span>
           ${hasDiscount ? `<span class="product-price-original">Rs. ${p.original_price.toLocaleString()}</span>` : ''}
@@ -60,12 +73,13 @@ function productCard(p) {
 
 async function loadFeatured() {
   try {
-    const res = await fetch('/api/products');
+    const res = await fetch('https://shopping-site-production.up.railway.app/api/products');
     const products = await res.json();
     const featured = products.slice(0, 4);
     document.getElementById('featuredGrid').innerHTML = featured.map(productCard).join('');
   } catch (err) {
-    document.getElementById('featuredGrid').innerHTML = `<p class="loading">Could not load products. Is the backend server running?</p>`;
+    document.getElementById('featuredGrid').innerHTML =
+      `<p class="loading">Could not load products. Is the backend server running?</p>`;
   }
 }
 
