@@ -12,7 +12,7 @@ if (loginForm) {
     const password = document.getElementById('password').value;
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('https://shopping-site-production.up.railway.app/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -41,7 +41,7 @@ if (signupForm) {
     const password = document.getElementById('password').value;
 
     try {
-      const res = await fetch('/api/auth/signup', {
+      const res = await fetch('https://shopping-site-production.up.railway.app/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password })
