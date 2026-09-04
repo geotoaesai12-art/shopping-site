@@ -1,99 +1,310 @@
-// shop.js — product catalog, search, and category filtering for shop.html
+// shop.js — product catalog, search, and category filtering
 
-mountLayout('shop');
-mountCartDrawer();
+document.addEventListener('DOMContentLoaded', () => {
+  mountLayout('shop');
+  mountCartDrawer();
 
-let allProducts = [];
-let activeCategory = 'All';
+  let allProducts = [];
+  let activeCategory = 'All';
 
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('category')) activeCategory = urlParams.get('category');
-if (urlParams.get('search')) document.addEventListener('DOMContentLoaded', () => {});
+  const API_BASE = 'https://shopping-site-production.up.railway.app';
 
-async function loadProducts() {
-  try {
-    const res = await fetch('https://shopping-site-production.up.railway.app/api/products');
-    allProducts = await res.json();
-    renderCategories();
+  const urlParams = new URLSearchParams(window.location.search);
 
-    const searchTerm = urlParams.get('search');
-    if (searchTerm) {
-      const headerInput = document.getElementById('headerSearchInput');
-      if (headerInput) headerInput.value = searchTerm;
+  if (urlParams.get('category')) {
+    activeCategory = urlParams.get('category');
+  }
+
+  async function loadProducts() {
+    const grid = document.getElementById('productGrid');
+
+    if (!grid) {
+      console.error('productGrid not found');
+      return;
     }
-    applyFilters();
-  } catch (err) {
-    document.getElementById('productGrid').innerHTML = `<p class="loading">Could not load products. Is the backend server running?</p>`;
-  }
-}
 
-async function loadCategories() {
-  try {
-    const res = await fetch('https://shopping-site-production.up.railway.app/api/categories');
-    return await res.json();
-  } catch {
-    return [];
-  }
-}
+    grid.innerHTML = '<p class="loading">Loading products...</p>';
 
-function productCard(p) {
-  const hasDiscount = p.discount_percent > 0;
-  return `
-    <a href="product.html?id=${p.id}" class="product-card" style="display:block;">
-      ${hasDiscount ? `<div class="discount-badge">-${p.discount_percent}%</div>` : ''}
-      <img src="${p.image_url}" alt="${p.name}" loading="lazy" />
-      <div class="product-info">
-        <div class="product-category">${p.category}</div>
-        <div class="product-name">${p.name}</div>
-        <div class="product-rating"><span class="stars">${starString(p.rating)}</span> (${p.rating_count})</div>
-        <div class="price-row">
-          <span class="product-price">Rs. ${p.price.toLocaleString()}</span>
-          ${hasDiscount ? `<span class="product-price-original">Rs. ${p.original_price.toLocaleString()}</span>` : ''}
-        </div>
-        <button class="add-to-cart-btn" ${p.stock <= 0 ? 'disabled' : ''} onclick='event.preventDefault(); addToCart(${JSON.stringify(p)})'>
-          ${p.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
-        </button>
-      </div>
-    </a>
-  `;
-}
+    try {
+      const res = await fetch(`${API_BASE}/api/products`);
 
-function renderProducts(products) {
-  const grid = document.getElementById('productGrid');
-  if (products.length === 0) {
-    grid.innerHTML = `<p class="loading">No products found.</p>`;
-    return;
-  }
-  grid.innerHTML = products.map(productCard).join('');
-}
+      if (!res.ok) {
+        throw new Error(`Products API error: ${res.status}`);
+      }
 
-async function renderCategories() {
-  const categories = ['All', ...await loadCategories()];
-  const nav = document.getElementById('categoryNav');
-  nav.innerHTML = categories.map(c => `
-    <button class="category-chip ${c === activeCategory ? 'active' : ''}" data-category="${c}">${c}</button>
-  `).join('');
+      const data = await res.json();
 
-  nav.querySelectorAll('.category-chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      activeCategory = btn.dataset.category;
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid products response');
+      }
+
+      allProducts = data;
+
+      await renderCategories();
+
+      const searchTerm = urlParams.get('search');
+
+      if (searchTerm) {
+        const headerInput = document.getElementById('headerSearchInput');
+
+        if (headerInput) {
+          headerInput.value = searchTerm;
+        }
+      }
+
       applyFilters();
-      renderCategories();
+
+    } catch (err) {
+      console.error('Could not load products:', err);
+
+      grid.innerHTML = `
+        <p class="loading">
+          Could not load products. Please refresh the page.
+        </p>
+      `;
+    }
+  }
+
+  async function loadCategories() {
+    try {
+      const res = await fetch(`${API_BASE}/api/categories`);
+
+      if (!res.ok) {
+        throw new Error(`Categories API error: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      return Array.isArray(data) ? data : [];
+
+    } catch (err) {
+      console.error('Could not load categories:', err);
+
+      // Fallback categories
+      return ['Electronics', 'Fashion', 'Home', 'Books'];
+    }
+  }
+
+  function productCard(p) {
+    const hasDiscount = Number(p.discount_percent) > 0;
+
+    const price = Number(p.price || 0);
+    const originalPrice = Number(p.original_price || 0);
+    const rating = Number(p.rating || 0);
+    const ratingCount = Number(p.rating_count || 0);
+    const stock = Number(p.stock || 0);
+
+    return `
+      <div class="product-card">
+
+        ${hasDiscount
+          ? `<div class="discount-badge">-${p.discount_percent}%</div>`
+          : ''
+        }
+
+        <a href="product.html?id=${encodeURIComponent(p.id)}" class="product-card-link">
+
+          <img
+            src="${p.image_url}"
+            alt="${p.name}"
+            loading="lazy"
+            onerror="this.src='https://picsum.photos/seed/product-${p.id}/500/500';"
+          />
+
+          <div class="product-info">
+
+            <div class="product-category">
+              ${p.category}
+            </div>
+
+            <div class="product-name">
+              ${p.name}
+            </div>
+
+            <div class="product-rating">
+              <span class="stars">${starString(rating)}</span>
+              (${ratingCount})
+            </div>
+
+            <div class="price-row">
+
+              <span class="product-price">
+                Rs. ${price.toLocaleString()}
+              </span>
+
+              ${hasDiscount && originalPrice > price
+                ? `
+                  <span class="product-price-original">
+                    Rs. ${originalPrice.toLocaleString()}
+                  </span>
+                `
+                : ''
+              }
+
+            </div>
+
+          </div>
+
+        </a>
+
+        <button
+          class="add-to-cart-btn"
+          ${stock <= 0 ? 'disabled' : ''}
+          data-product-id="${p.id}"
+        >
+          ${stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+        </button>
+
+      </div>
+    `;
+  }
+
+  function renderProducts(products) {
+    const grid = document.getElementById('productGrid');
+
+    if (!grid) return;
+
+    if (!products || products.length === 0) {
+      grid.innerHTML = `
+        <p class="loading">
+          No products found.
+        </p>
+      `;
+      return;
+    }
+
+    grid.innerHTML = products.map(productCard).join('');
+
+    // Add-to-cart buttons
+    grid.querySelectorAll('.add-to-cart-btn').forEach(button => {
+
+      button.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const productId = Number(button.dataset.productId);
+
+        const product = allProducts.find(
+          p => Number(p.id) === productId
+        );
+
+        if (!product) {
+          console.error('Product not found:', productId);
+          return;
+        }
+
+        if (typeof addToCart === 'function') {
+          addToCart(product);
+        } else {
+          console.error('addToCart function not found');
+        }
+      });
+
     });
+  }
+
+  async function renderCategories() {
+    const nav = document.getElementById('categoryNav');
+
+    if (!nav) return;
+
+    const loadedCategories = await loadCategories();
+
+    const categories = [
+      'All',
+      ...loadedCategories.filter(
+        c => c && c !== 'All'
+      )
+    ];
+
+    nav.innerHTML = categories.map(category => `
+      <button
+        class="category-chip ${category === activeCategory ? 'active' : ''}"
+        data-category="${category}"
+      >
+        ${category}
+      </button>
+    `).join('');
+
+    nav.querySelectorAll('.category-chip').forEach(button => {
+
+      button.addEventListener('click', () => {
+
+        activeCategory = button.dataset.category;
+
+        applyFilters();
+
+        renderCategories();
+
+        // Update URL without reloading
+        const newUrl = new URL(window.location.href);
+
+        if (activeCategory === 'All') {
+          newUrl.searchParams.delete('category');
+        } else {
+          newUrl.searchParams.set('category', activeCategory);
+        }
+
+        window.history.replaceState(
+          {},
+          '',
+          newUrl.toString()
+        );
+
+      });
+
+    });
+  }
+
+  function applyFilters() {
+    const headerInput =
+      document.getElementById('headerSearchInput');
+
+    const search = (
+      headerInput
+        ? headerInput.value
+        : (urlParams.get('search') || '')
+    )
+      .trim()
+      .toLowerCase();
+
+    let filtered = [...allProducts];
+
+    // Category filter
+    if (activeCategory !== 'All') {
+      filtered = filtered.filter(product =>
+        String(product.category).toLowerCase() ===
+        String(activeCategory).toLowerCase()
+      );
+    }
+
+    // Search filter
+    if (search) {
+      filtered = filtered.filter(product => {
+
+        const name = String(product.name || '').toLowerCase();
+        const category = String(product.category || '').toLowerCase();
+
+        return (
+          name.includes(search) ||
+          category.includes(search)
+        );
+
+      });
+    }
+
+    renderProducts(filtered);
+  }
+
+  // Search input
+  document.addEventListener('input', event => {
+
+    if (event.target.id === 'headerSearchInput') {
+      applyFilters();
+    }
+
   });
-}
 
-function applyFilters() {
-  const headerInput = document.getElementById('headerSearchInput');
-  const search = (headerInput ? headerInput.value : (urlParams.get('search') || '')).toLowerCase();
-  let filtered = allProducts;
-  if (activeCategory !== 'All') filtered = filtered.filter(p => p.category === activeCategory);
-  if (search) filtered = filtered.filter(p => p.name.toLowerCase().includes(search));
-  renderProducts(filtered);
-}
-
-document.addEventListener('input', (e) => {
-  if (e.target.id === 'headerSearchInput') applyFilters();
+  // Load everything
+  loadProducts();
 });
-
-loadProducts();
