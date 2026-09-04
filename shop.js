@@ -12,7 +12,7 @@ if (urlParams.get('search')) document.addEventListener('DOMContentLoaded', () =>
 
 async function loadProducts() {
   try {
-    const res = await fetch('/api/products');
+    const res = await fetch('https://shopping-site-production.up.railway.app/api/products');
     allProducts = await res.json();
     renderCategories();
 
@@ -29,9 +29,11 @@ async function loadProducts() {
 
 async function loadCategories() {
   try {
-    const res = await fetch('/api/categories');
+    const res = await fetch('https://shopping-site-production.up.railway.app/api/categories');
     return await res.json();
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 function productCard(p) {
