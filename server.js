@@ -1,6 +1,5 @@
 // server.js
-// Main backend server: serves the REST API (and the frontend files too,
-// so the whole site can be deployed as a single service).
+// Main backend server: serves the REST API and frontend files.
 
 const express = require('express');
 const cors = require('cors');
@@ -14,14 +13,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Serve the frontend static files (index.html, style.css, app.js)
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
+// Serve frontend files directly from this project folder
+app.use(express.static(__dirname));
 
 // ---------- API ROUTES ----------
 
 // Get all products (optional ?category= filter, optional ?search=)
 app.get('/api/products', (req, res) => {
   const { category, search } = req.query;
+
   let query = 'SELECT * FROM products WHERE 1=1';
   const params = [];
 
@@ -29,6 +29,7 @@ app.get('/api/products', (req, res) => {
     query += ' AND category = ?';
     params.push(category);
   }
+
   if (search) {
     query += ' AND name LIKE ?';
     params.push(`%${search}%`);
@@ -38,20 +39,30 @@ app.get('/api/products', (req, res) => {
   res.json(products);
 });
 
-// Get distinct categories (for filter dropdown)
+// Get distinct categories
 app.get('/api/categories', (req, res) => {
-  const categories = db.prepare('SELECT DISTINCT category FROM products').all();
+  const categories = db
+    .prepare('SELECT DISTINCT category FROM products')
+    .all();
+
   res.json(categories.map(c => c.category));
 });
 
 // Get single product by id
 app.get('/api/products/:id', (req, res) => {
-  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
-  if (!product) return res.status(404).json({ error: 'Product not found' });
+  const product = db
+    .prepare('SELECT * FROM products WHERE id = ?')
+    .get(req.params.id);
+
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' });
+  }
+
   res.json(product);
 });
 
-// Valid coupon codes: code -> percent off order subtotal
+// ---------- COUPONS ----------
+
 const COUPON_CODES = {
   'SALE11': 11,
   'WELCOME10': 10,
@@ -63,8 +74,16 @@ const COUPON_CODES = {
   'POWER10': 10,
 };
 
-// Order status stages, in order
-const ORDER_STAGES = ['received', 'warehouse', 'packed', 'out_for_delivery', 'delivered'];
+// ---------- ORDER STATUS ----------
+
+const ORDER_STAGES = [
+  'received',
+  'warehouse',
+  'packed',
+  'out_for_delivery',
+  'delivered'
+];
+
 const STAGE_LABELS = {
   received: 'Order received',
   warehouse: 'Arrived at warehouse',
@@ -73,34 +92,90 @@ const STAGE_LABELS = {
   delivered: 'Delivered',
 };
 
-// Create an order (checkout)
-// Expected body: { customer_name, email, address, city, payment_method, coupon_code, items: [{ product_id, quantity }] }
-app.post('/api/orders', (req, res) => {
-  const { customer_name, email, address, city, payment_method, coupon_code, items } = req.body;
+// ---------- CREATE ORDER ----------
 
-  if (!customer_name || !email || !address || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: 'Missing required order fields.' });
+app.post('/api/orders', (req, res) => {
+  const {
+    customer_name,
+    email,
+    address,
+    city,
+    payment_method,
+    coupon_code,
+    items
+  } = req.body;
+
+  if (
+    !customer_name ||
+    !email ||
+    !address ||
+    !Array.isArray(items) ||
+    items.length === 0
+  ) {
+    return res.status(400).json({
+      error: 'Missing required order fields.'
+    });
   }
 
-  const validPaymentMethods = ['cod', 'easypaisa', 'jazzcash', 'bank'];
-  const finalPaymentMethod = validPaymentMethods.includes(payment_method) ? payment_method : 'cod';
+  const validPaymentMethods = [
+    'cod',
+    'easypaisa',
+    'jazzcash',
+    'bank'
+  ];
+
+  const finalPaymentMethod =
+    validPaymentMethods.includes(payment_method)
+      ? payment_method
+      : 'cod';
 
   let discountPercent = 0;
-  const normalizedCoupon = (coupon_code || '').trim().toUpperCase();
-  if (normalizedCoupon && COUPON_CODES[normalizedCoupon]) {
+
+  const normalizedCoupon =
+    (coupon_code || '').trim().toUpperCase();
+
+  if (
+    normalizedCoupon &&
+    COUPON_CODES[normalizedCoupon]
+  ) {
     discountPercent = COUPON_CODES[normalizedCoupon];
   }
 
-  const getProduct = db.prepare('SELECT * FROM products WHERE id = ?');
+  const getProduct = db.prepare(
+    'SELECT * FROM products WHERE id = ?'
+  );
+
   const insertOrder = db.prepare(`
-    INSERT INTO orders (customer_name, email, address, city, payment_method, coupon_code, discount_amount, subtotal, total, status)
+    INSERT INTO orders
+    (
+      customer_name,
+      email,
+      address,
+      city,
+      payment_method,
+      coupon_code,
+      discount_amount,
+      subtotal,
+      total,
+      status
+    )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'received')
   `);
+
   const insertItem = db.prepare(`
-    INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
+    INSERT INTO order_items
+    (
+      order_id,
+      product_id,
+      quantity,
+      price_at_purchase
+    )
     VALUES (?, ?, ?, ?)
   `);
-  const updateStock = db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?');
+
+  const updateStock = db.prepare(
+    'UPDATE products SET stock = stock - ? WHERE id = ?'
+  );
 
   function createOrder() {
     let subtotal = 0;
@@ -108,236 +183,596 @@ app.post('/api/orders', (req, res) => {
 
     for (const item of items) {
       const product = getProduct.get(item.product_id);
-      if (!product) throw new Error(`Product ${item.product_id} not found`);
-      if (product.stock < item.quantity) throw new Error(`Not enough stock for ${product.name}`);
+
+      if (!product) {
+        throw new Error(
+          `Product ${item.product_id} not found`
+        );
+      }
+
+      if (product.stock < item.quantity) {
+        throw new Error(
+          `Not enough stock for ${product.name}`
+        );
+      }
+
       subtotal += product.price * item.quantity;
-      validatedItems.push({ product, quantity: item.quantity });
+
+      validatedItems.push({
+        product,
+        quantity: item.quantity
+      });
     }
 
-    const discountAmount = Math.round(subtotal * (discountPercent / 100));
+    const discountAmount = Math.round(
+      subtotal * (discountPercent / 100)
+    );
+
     const total = subtotal - discountAmount;
 
     const orderResult = insertOrder.run(
-      customer_name, email, address, city || '', finalPaymentMethod,
-      discountPercent > 0 ? normalizedCoupon : null, discountAmount, subtotal, total
+      customer_name,
+      email,
+      address,
+      city || '',
+      finalPaymentMethod,
+      discountPercent > 0 ? normalizedCoupon : null,
+      discountAmount,
+      subtotal,
+      total
     );
+
     const orderId = orderResult.lastInsertRowid;
 
-    for (const { product, quantity } of validatedItems) {
-      insertItem.run(orderId, product.id, quantity, product.price);
-      updateStock.run(quantity, product.id);
+    for (const {
+      product,
+      quantity
+    } of validatedItems) {
+      insertItem.run(
+        orderId,
+        product.id,
+        quantity,
+        product.price
+      );
+
+      updateStock.run(
+        quantity,
+        product.id
+      );
     }
 
-    return { orderId, subtotal, discountAmount, total };
+    return {
+      orderId,
+      subtotal,
+      discountAmount,
+      total
+    };
   }
 
   try {
     db.exec('BEGIN');
-    const { orderId, subtotal, discountAmount, total } = createOrder();
+
+    const {
+      orderId,
+      subtotal,
+      discountAmount,
+      total
+    } = createOrder();
+
     db.exec('COMMIT');
-    res.status(201).json({ success: true, order_id: orderId, subtotal, discount_amount: discountAmount, total });
+
+    res.status(201).json({
+      success: true,
+      order_id: orderId,
+      subtotal,
+      discount_amount: discountAmount,
+      total
+    });
+
   } catch (err) {
     db.exec('ROLLBACK');
-    res.status(400).json({ error: err.message });
+
+    res.status(400).json({
+      error: err.message
+    });
   }
 });
 
-// Validate a coupon code (used by the checkout form to preview the discount)
+// ---------- VALIDATE COUPON ----------
+
 app.post('/api/coupons/validate', (req, res) => {
-  const code = (req.body.code || '').trim().toUpperCase();
+  const code =
+    (req.body.code || '').trim().toUpperCase();
+
   if (COUPON_CODES[code]) {
-    res.json({ valid: true, percent: COUPON_CODES[code] });
-  } else {
-    res.json({ valid: false });
+    return res.json({
+      valid: true,
+      percent: COUPON_CODES[code]
+    });
   }
+
+  res.json({
+    valid: false
+  });
 });
 
-// Get a single order with its items + tracking stages (order confirmation / tracking page)
+// ---------- GET ORDER ----------
+
 app.get('/api/orders/:id', (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-  if (!order) return res.status(404).json({ error: 'Order not found' });
+  const order = db
+    .prepare('SELECT * FROM orders WHERE id = ?')
+    .get(req.params.id);
+
+  if (!order) {
+    return res.status(404).json({
+      error: 'Order not found'
+    });
+  }
 
   const items = db.prepare(`
-    SELECT oi.quantity, oi.price_at_purchase, p.name, p.image_url
+    SELECT
+      oi.quantity,
+      oi.price_at_purchase,
+      p.name,
+      p.image_url
     FROM order_items oi
-    JOIN products p ON p.id = oi.product_id
+    JOIN products p
+      ON p.id = oi.product_id
     WHERE oi.order_id = ?
   `).all(req.params.id);
 
-  const currentIndex = ORDER_STAGES.indexOf(order.status);
+  const currentIndex =
+    ORDER_STAGES.indexOf(order.status);
+
   const stages = ORDER_STAGES.map((key, i) => ({
-    key, label: STAGE_LABELS[key], done: i <= currentIndex, current: i === currentIndex,
+    key,
+    label: STAGE_LABELS[key],
+    done: i <= currentIndex,
+    current: i === currentIndex
   }));
 
-  res.json({ ...order, items, stages });
+  res.json({
+    ...order,
+    items,
+    stages
+  });
 });
 
-// Look up recent orders by email (customer order tracking without login)
+// ---------- ORDERS BY EMAIL ----------
+
 app.get('/api/orders/by-email/:email', (req, res) => {
-  const orders = db.prepare('SELECT id, total, status, city, created_at FROM orders WHERE email = ? ORDER BY id DESC').all(req.params.email);
+  const orders = db
+    .prepare(`
+      SELECT
+        id,
+        total,
+        status,
+        city,
+        created_at
+      FROM orders
+      WHERE email = ?
+      ORDER BY id DESC
+    `)
+    .all(req.params.email);
+
   res.json(orders);
 });
 
 // ---------- ADMIN ----------
-// Simple password gate for viewing orders & contact messages.
-// Change this to something private before going live.
-const ADMIN_KEY = process.env.ADMIN_KEY || 'depot123';
+
+const ADMIN_KEY =
+  process.env.ADMIN_KEY || 'depot123';
 
 function requireAdmin(req, res, next) {
   if (req.headers['x-admin-key'] !== ADMIN_KEY) {
-    return res.status(401).json({ error: 'Invalid admin password.' });
+    return res.status(401).json({
+      error: 'Invalid admin password.'
+    });
   }
+
   next();
 }
 
-// List all orders with their items (newest first)
+// List all orders
 app.get('/api/admin/orders', requireAdmin, (req, res) => {
-  const orders = db.prepare('SELECT * FROM orders ORDER BY id DESC').all();
+  const orders = db
+    .prepare(
+      'SELECT * FROM orders ORDER BY id DESC'
+    )
+    .all();
+
   const itemsStmt = db.prepare(`
-    SELECT oi.quantity, oi.price_at_purchase, p.name
+    SELECT
+      oi.quantity,
+      oi.price_at_purchase,
+      p.name
     FROM order_items oi
-    JOIN products p ON p.id = oi.product_id
+    JOIN products p
+      ON p.id = oi.product_id
     WHERE oi.order_id = ?
   `);
-  const withItems = orders.map(o => ({ ...o, items: itemsStmt.all(o.id) }));
+
+  const withItems = orders.map(order => ({
+    ...order,
+    items: itemsStmt.all(order.id)
+  }));
+
   res.json(withItems);
 });
 
-// List all contact form messages (newest first)
+// List contact messages
 app.get('/api/admin/messages', requireAdmin, (req, res) => {
-  const messages = db.prepare('SELECT * FROM messages ORDER BY id DESC').all();
+  const messages = db
+    .prepare(
+      'SELECT * FROM messages ORDER BY id DESC'
+    )
+    .all();
+
   res.json(messages);
 });
 
-// Reply to a contact message (saved in the database — see note in /api/contact
-// about connecting a real email provider so this reply also gets emailed out)
-app.post('/api/admin/messages/:id/reply', requireAdmin, (req, res) => {
-  const { reply } = req.body;
-  if (!reply) return res.status(400).json({ error: 'Reply text is required.' });
+// Reply to contact message
+app.post(
+  '/api/admin/messages/:id/reply',
+  requireAdmin,
+  (req, res) => {
+    const { reply } = req.body;
 
-  const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
-  if (!message) return res.status(404).json({ error: 'Message not found.' });
+    if (!reply) {
+      return res.status(400).json({
+        error: 'Reply text is required.'
+      });
+    }
 
-  db.prepare('UPDATE messages SET reply = ?, replied_at = CURRENT_TIMESTAMP WHERE id = ?')
-    .run(reply, req.params.id);
+    const message = db
+      .prepare(
+        'SELECT * FROM messages WHERE id = ?'
+      )
+      .get(req.params.id);
 
-  res.json({ success: true });
-});
+    if (!message) {
+      return res.status(404).json({
+        error: 'Message not found.'
+      });
+    }
 
-// Advance an order's tracking status (admin clicks through: received → warehouse → packed → out for delivery → delivered)
-app.post('/api/admin/orders/:id/advance', requireAdmin, (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-  if (!order) return res.status(404).json({ error: 'Order not found.' });
+    db.prepare(`
+      UPDATE messages
+      SET reply = ?,
+          replied_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      reply,
+      req.params.id
+    );
 
-  const currentIndex = ORDER_STAGES.indexOf(order.status);
-  if (currentIndex === -1 || currentIndex >= ORDER_STAGES.length - 1) {
-    return res.status(400).json({ error: 'Order is already at the final stage.' });
+    res.json({
+      success: true
+    });
   }
+);
 
-  const nextStatus = ORDER_STAGES[currentIndex + 1];
-  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(nextStatus, req.params.id);
-  res.json({ success: true, status: nextStatus });
-});
+// Advance order status
+app.post(
+  '/api/admin/orders/:id/advance',
+  requireAdmin,
+  (req, res) => {
+    const order = db
+      .prepare(
+        'SELECT * FROM orders WHERE id = ?'
+      )
+      .get(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        error: 'Order not found.'
+      });
+    }
+
+    const currentIndex =
+      ORDER_STAGES.indexOf(order.status);
+
+    if (
+      currentIndex === -1 ||
+      currentIndex >= ORDER_STAGES.length - 1
+    ) {
+      return res.status(400).json({
+        error: 'Order is already at the final stage.'
+      });
+    }
+
+    const nextStatus =
+      ORDER_STAGES[currentIndex + 1];
+
+    db.prepare(
+      'UPDATE orders SET status = ? WHERE id = ?'
+    ).run(
+      nextStatus,
+      req.params.id
+    );
+
+    res.json({
+      success: true,
+      status: nextStatus
+    });
+  }
+);
 
 // ---------- AUTH ----------
 
 function hashPassword(password, salt) {
-  return crypto.scryptSync(password, salt, 64).toString('hex');
+  return crypto
+    .scryptSync(password, salt, 64)
+    .toString('hex');
 }
 
 function makeToken() {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto
+    .randomBytes(32)
+    .toString('hex');
 }
 
-// Sign up a new user
+// Signup
 app.post('/api/auth/signup', (req, res) => {
-  const { name, email, password } = req.body;
+  const {
+    name,
+    email,
+    password
+  } = req.body;
+
   if (!name || !email || !password) {
-    return res.status(400).json({ error: 'Name, email and password are required.' });
+    return res.status(400).json({
+      error:
+        'Name, email and password are required.'
+    });
   }
+
   if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    return res.status(400).json({
+      error:
+        'Password must be at least 6 characters.'
+    });
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase());
+  const existing = db
+    .prepare(
+      'SELECT id FROM users WHERE email = ?'
+    )
+    .get(email.toLowerCase());
+
   if (existing) {
-    return res.status(400).json({ error: 'An account with this email already exists.' });
+    return res.status(400).json({
+      error:
+        'An account with this email already exists.'
+    });
   }
 
-  const salt = crypto.randomBytes(16).toString('hex');
-  const password_hash = hashPassword(password, salt);
+  const salt =
+    crypto.randomBytes(16).toString('hex');
 
-  const result = db.prepare(
-    'INSERT INTO users (name, email, password_hash, salt) VALUES (?, ?, ?, ?)'
-  ).run(name, email.toLowerCase(), password_hash, salt);
+  const password_hash =
+    hashPassword(password, salt);
+
+  const result = db.prepare(`
+    INSERT INTO users
+    (
+      name,
+      email,
+      password_hash,
+      salt
+    )
+    VALUES (?, ?, ?, ?)
+  `).run(
+    name,
+    email.toLowerCase(),
+    password_hash,
+    salt
+  );
 
   const token = makeToken();
-  db.prepare('INSERT INTO sessions (token, user_id) VALUES (?, ?)').run(token, result.lastInsertRowid);
 
-  res.status(201).json({ token, user: { id: result.lastInsertRowid, name, email: email.toLowerCase() } });
+  db.prepare(`
+    INSERT INTO sessions
+    (
+      token,
+      user_id
+    )
+    VALUES (?, ?)
+  `).run(
+    token,
+    result.lastInsertRowid
+  );
+
+  res.status(201).json({
+    token,
+    user: {
+      id: result.lastInsertRowid,
+      name,
+      email: email.toLowerCase()
+    }
+  });
 });
 
-// Log in an existing user
+// Login
 app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
+  const {
+    email,
+    password
+  } = req.body;
+
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
+    return res.status(400).json({
+      error:
+        'Email and password are required.'
+    });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
-  if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
+  const user = db
+    .prepare(
+      'SELECT * FROM users WHERE email = ?'
+    )
+    .get(email.toLowerCase());
 
-  const hash = hashPassword(password, user.salt);
+  if (!user) {
+    return res.status(401).json({
+      error:
+        'Invalid email or password.'
+    });
+  }
+
+  const hash =
+    hashPassword(password, user.salt);
+
   if (hash !== user.password_hash) {
-    return res.status(401).json({ error: 'Invalid email or password.' });
+    return res.status(401).json({
+      error:
+        'Invalid email or password.'
+    });
   }
 
   const token = makeToken();
-  db.prepare('INSERT INTO sessions (token, user_id) VALUES (?, ?)').run(token, user.id);
 
-  res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+  db.prepare(`
+    INSERT INTO sessions
+    (
+      token,
+      user_id
+    )
+    VALUES (?, ?)
+  `).run(
+    token,
+    user.id
+  );
+
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    }
+  });
 });
 
-// Get the currently logged-in user from a token (frontend calls this on page load)
+// Current logged-in user
 app.get('/api/auth/me', (req, res) => {
-  const token = (req.headers.authorization || '').replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Not logged in.' });
+  const token =
+    (req.headers.authorization || '')
+      .replace('Bearer ', '');
 
-  const session = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
-  if (!session) return res.status(401).json({ error: 'Session expired.' });
+  if (!token) {
+    return res.status(401).json({
+      error: 'Not logged in.'
+    });
+  }
 
-  const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(session.user_id);
-  res.json({ user });
+  const session = db
+    .prepare(
+      'SELECT * FROM sessions WHERE token = ?'
+    )
+    .get(token);
+
+  if (!session) {
+    return res.status(401).json({
+      error: 'Session expired.'
+    });
+  }
+
+  const user = db
+    .prepare(`
+      SELECT
+        id,
+        name,
+        email
+      FROM users
+      WHERE id = ?
+    `)
+    .get(session.user_id);
+
+  res.json({
+    user
+  });
 });
 
-// Log out
+// Logout
 app.post('/api/auth/logout', (req, res) => {
-  const token = (req.headers.authorization || '').replace('Bearer ', '');
-  if (token) db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
-  res.json({ success: true });
+  const token =
+    (req.headers.authorization || '')
+      .replace('Bearer ', '');
+
+  if (token) {
+    db.prepare(
+      'DELETE FROM sessions WHERE token = ?'
+    ).run(token);
+  }
+
+  res.json({
+    success: true
+  });
 });
 
 // ---------- CONTACT ----------
 
-// Save a contact message (Note: this stores the message in the database.
-// To actually email it out, connect an SMTP provider like Gmail/SendGrid here later.)
+// Save contact message
 app.post('/api/contact', (req, res) => {
-  const { name, email, message } = req.body;
+  const {
+    name,
+    email,
+    message
+  } = req.body;
+
   if (!name || !email || !message) {
-    return res.status(400).json({ error: 'Name, email and message are required.' });
+    return res.status(400).json({
+      error:
+        'Name, email and message are required.'
+    });
   }
-  db.prepare('INSERT INTO messages (name, email, message) VALUES (?, ?, ?)').run(name, email, message);
-  res.status(201).json({ success: true });
+
+  db.prepare(`
+    INSERT INTO messages
+    (
+      name,
+      email,
+      message
+    )
+    VALUES (?, ?, ?)
+  `).run(
+    name,
+    email,
+    message
+  );
+
+  res.status(201).json({
+    success: true
+  });
 });
 
-// Customer-facing: look up messages (and any replies) sent from a given email
+// Customer messages by email
 app.get('/api/messages/by-email', (req, res) => {
   const { email } = req.query;
-  if (!email) return res.status(400).json({ error: 'Email is required.' });
-  const messages = db.prepare('SELECT * FROM messages WHERE email = ? ORDER BY id DESC').all(email);
+
+  if (!email) {
+    return res.status(400).json({
+      error: 'Email is required.'
+    });
+  }
+
+  const messages = db
+    .prepare(`
+      SELECT *
+      FROM messages
+      WHERE email = ?
+      ORDER BY id DESC
+    `)
+    .all(email);
+
   res.json(messages);
 });
 
+// ---------- START SERVER ----------
+
 app.listen(PORT, () => {
-  console.log(`Shopping site server running on http://localhost:${PORT}`);
+  console.log(
+    `Shopping site server running on port ${PORT}`
+  );
 });
