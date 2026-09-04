@@ -1,5 +1,7 @@
 // partials.js — shared header + footer, injected on every page.
 
+const API_BASE = 'https://shopping-site-production.up.railway.app';
+
 const LOGO_SVG = `<svg class="logo-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M8 12V9a4 4 0 0 1 8 0v3" stroke="#FF7A1A" stroke-width="2" stroke-linecap="round"/>
   <rect x="5" y="12" width="22" height="16" rx="3" fill="#FF7A1A"/>
@@ -69,6 +71,7 @@ function renderFooter() {
           </a>
         </div>
       </div>
+
       <div class="footer-col">
         <h4>Shop</h4>
         <a href="shop.html">All products</a>
@@ -76,12 +79,14 @@ function renderFooter() {
         <a href="shop.html?category=Fashion">Fashion</a>
         <a href="shop.html?category=Home">Home</a>
       </div>
+
       <div class="footer-col">
         <h4>Support</h4>
         <a href="contact.html">Contact us</a>
         <a href="#">Shipping info</a>
         <a href="#">Returns & refunds</a>
       </div>
+
       <div class="footer-col">
         <h4>Get in touch</h4>
         <p>hello@sahn.pk</p>
@@ -89,6 +94,7 @@ function renderFooter() {
         <p>Mon–Sat, 10am–7pm PKT</p>
       </div>
     </div>
+
     <div class="footer-bottom">© 2026 SAHN Store. All rights reserved.</div>
   </footer>`;
 }
@@ -98,28 +104,46 @@ function mountLayout(activePage) {
   document.getElementById('footerMount').innerHTML = renderFooter();
 
   const logoutLink = document.getElementById('logoutLink');
+
   if (logoutLink) {
     logoutLink.addEventListener('click', async (e) => {
       e.preventDefault();
+
       const token = localStorage.getItem('token');
+
       try {
-        await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`${API_BASE}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
       } catch {}
+
       localStorage.removeItem('token');
       localStorage.removeItem('userName');
+
       window.location.href = 'index.html';
     });
   }
 
   const searchForm = document.getElementById('headerSearchForm');
+
   if (searchForm) {
     searchForm.addEventListener('submit', (e) => {
       e.preventDefault();
+
       const q = document.getElementById('headerSearchInput').value.trim();
-      if (window.location.pathname.includes('shop.html') && typeof applyFilters === 'function') {
+
+      if (
+        window.location.pathname.includes('shop.html') &&
+        typeof applyFilters === 'function'
+      ) {
         applyFilters();
       } else {
-        window.location.href = q ? `shop.html?search=${encodeURIComponent(q)}` : 'shop.html';
+        window.location.href = q
+          ? `shop.html?search=${encodeURIComponent(q)}`
+          : 'shop.html';
       }
     });
   }
@@ -128,15 +152,29 @@ function mountLayout(activePage) {
 }
 
 // ---------- Cart helpers (shared across all pages) ----------
-function getCart() { return JSON.parse(localStorage.getItem('cart') || '[]'); }
-function saveCart(cart) { localStorage.setItem('cart', JSON.stringify(cart)); renderCartCount(); }
+
+function getCart() {
+  return JSON.parse(localStorage.getItem('cart') || '[]');
+}
+
+function saveCart(cart) {
+  localStorage.setItem('cart', JSON.stringify(cart));
+  renderCartCount();
+}
+
 function renderCartCount() {
   const el = document.getElementById('cartCount');
+
   if (!el) return;
-  el.textContent = getCart().reduce((sum, i) => sum + i.quantity, 0);
+
+  el.textContent = getCart().reduce(
+    (sum, i) => sum + i.quantity,
+    0
+  );
 }
 
 function starString(rating) {
   const full = Math.round(rating);
+
   return '★'.repeat(full) + '☆'.repeat(5 - full);
 }
